@@ -1,32 +1,25 @@
 //
-//  CustomMessageCell.swift
-//  Flash Chat
+//  MainViewController.swift
+//  MoviesApp
 //
-//  Created by Angela Yu on 30/08/2015.
-//  Copyright (c) 2015 London App Brewery. All rights reserved.
+//  Created by Armin Spahic on 22/06/2018.
+//  Copyright © 2018 Armin Spahic. All rights reserved.
 //
 
 import UIKit
 
 class CustomCell: UITableViewCell {
    
-   @IBOutlet weak var movieImageView: UIImageView!
-   @IBOutlet weak var informationContentView: UIView!
-   @IBOutlet weak var movieDescription: UILabel!
-   @IBOutlet weak var movieTitle: UILabel!
-   @IBOutlet weak var movieNumber: UILabel!
-   @IBOutlet weak var voteLabel: UILabel!
+    @IBOutlet weak var cellImageView: UIImageView!
+    @IBOutlet weak var votesLabel: UILabel!
+    @IBOutlet weak var numberLabel: UILabel!
+    @IBOutlet weak var descriptionLabel: UILabel!
+    @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var cellContentView: UIView!
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Initialization code goes here
-        CellSetup()
-        
-        
+        cellImageView?.layer.cornerRadius = 15.0
         }
-
-    func CellSetup() {
-        movieImageView.layer.cornerRadius = 15.0
-    }
 
 }

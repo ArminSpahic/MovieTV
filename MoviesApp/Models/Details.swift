@@ -7,3 +7,12 @@
 //
 
 import Foundation
+
+class Details {
+    
+    var name: String = ""
+    var overview: String = ""
+    var imageURL: String = ""
+    var genre: String = "Unknown"
+    
+}

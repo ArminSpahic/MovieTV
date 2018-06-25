@@ -7,89 +7,103 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
+import Kingfisher
 
-class ResultsController: UITableViewController {
-
+class ResultsController: UITableViewController, UISearchResultsUpdating, UISearchBarDelegate {
+    
+    func updateSearchResults(for searchController: UISearchController) {
+        searchBar = searchController.searchBar
+        setRxQuery()
+    }
+    
+    private let bag = DisposeBag()
+    var searchBar : UISearchBar?
+    var repoId = 0
+    var mediaType = ""
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
+        setupTableView()
+        setupNavBar()
+        setRxSelectionOption()
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    
+    private func setupTableView() {
+        tableView.delegate = nil
+        tableView.dataSource = nil
+        tableView.tableFooterView = UIView()
+        tableView.register(UINib(nibName: "CustomCell", bundle: nil), forCellReuseIdentifier: "customCell")
+        tableView.tableFooterView = UIView()
     }
-
-    // MARK: - Table view data source
-
-    override func numberOfSections(in tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
-        return 0
+    
+    func setupNavBar() {
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationItem.hidesSearchBarWhenScrolling = false
     }
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
-        return 0
+    
+    //MARK: RXSWIFT LIVE SEARCH METHOD
+    func setRxSelectionOption() {
+        tableView.delegate = nil
+        tableView.dataSource = nil
+        tableView.rx.modelSelected(Search.self)
+            .subscribe(onNext: { (item) in
+                print(item.id)
+                self.mediaType = item.mediaType
+                self.repoId = item.id
+                let destinationVC = self.storyboard?.instantiateViewController(withIdentifier: "DetailsViewController") as! DetailsViewController
+                if self.mediaType == "movie" {
+                    destinationVC.setMovieId(id: self.repoId)
+                    destinationVC.navigationItem.title = "Movie"
+                } else {
+                    destinationVC.setTVShowID(id: self.repoId)
+                    destinationVC.navigationItem.title = "TV Show"
+                }
+                
+                self.presentingViewController?.navigationController?.pushViewController(destinationVC, animated: true)
+            })
+            .disposed(by: bag)
     }
-
-    /*
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath)
-
-        // Configure the cell...
-
-        return cell
+    
+    func setRxQuery(){
+        tableView.delegate = nil
+        tableView.dataSource = nil
+        searchBar?.rx.text
+            .orEmpty
+            .filter { query in
+                return query.count > 2
+            }
+            .debounce(0.5, scheduler: MainScheduler.instance)
+            .map { query in
+                let apiUrl = URL(string: "https://api.themoviedb.org/3/search/multi?api_key=\(Globals.init().apiKey)&query=" + query.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!)!
+                return URLRequest(url: apiUrl)
+            }
+            .flatMapLatest { request in
+                return URLSession.shared.rx.json(request: request)
+                    .catchErrorJustReturn([])
+            }
+            .map { json -> [Search] in
+                guard let json = json as? [String: Any],
+                    let items = json["results"] as? [[String: Any]]
+                    else {
+                        return []
+                        
+                }
+                return items.compactMap(Search.init)
+            }
+            .bind(to: tableView.rx.items) { tableView, row, search in
+                let cell = tableView.dequeueReusableCell(withIdentifier: "customCell") as! CustomCell
+                tableView.separatorStyle = .none
+                cell.nameLabel.text = search.name
+                cell.votesLabel.text = "Vote rating: \(search.voteRating) with \(search.voteCount) votes"
+                cell.descriptionLabel.text = "Media type: \(search.mediaType.uppercased())"
+                cell.cellImageView?.kf.setImage(with: URL(string: "http://image.tmdb.org/t/p/w185/\(search.imageURL)"))
+                return cell
+            }
+            .disposed(by: bag)
     }
-    */
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
-    }
-    */
-
-    /*
-    // Override to support editing the table view.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
-    }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
+    
+
