@@ -24,6 +24,7 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
     var mediaType = ""
     
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
@@ -32,11 +33,8 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
     }
     
     private func setupTableView() {
-        tableView.delegate = nil
-        tableView.dataSource = nil
         tableView.tableFooterView = UIView()
         tableView.register(UINib(nibName: "CustomCell", bundle: nil), forCellReuseIdentifier: "customCell")
-        tableView.tableFooterView = UIView()
     }
     
     func setupNavBar() {
@@ -46,8 +44,6 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
     
     //MARK: RXSWIFT LIVE SEARCH METHOD
     func setRxSelectionOption() {
-        tableView.delegate = nil
-        tableView.dataSource = nil
         tableView.rx.modelSelected(Search.self)
             .subscribe(onNext: { (item) in
                 print(item.id)
@@ -61,6 +57,7 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
                     destinationVC.setTVShowID(id: self.repoId)
                     destinationVC.navigationItem.title = "TV Show"
                 }
+                
                 
                 self.presentingViewController?.navigationController?.pushViewController(destinationVC, animated: true)
             })
@@ -87,11 +84,14 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
             .map { json -> [Search] in
                 guard let json = json as? [String: Any],
                     let items = json["results"] as? [[String: Any]]
+                    
                     else {
                         return []
                         
                 }
+                
                 return items.compactMap(Search.init)
+                
             }
             .bind(to: tableView.rx.items) { tableView, row, search in
                 let cell = tableView.dequeueReusableCell(withIdentifier: "customCell") as! CustomCell
@@ -100,6 +100,7 @@ class ResultsController: UITableViewController, UISearchResultsUpdating, UISearc
                 cell.votesLabel.text = "Vote rating: \(search.voteRating) with \(search.voteCount) votes"
                 cell.descriptionLabel.text = "Media type: \(search.mediaType.uppercased())"
                 cell.cellImageView?.kf.setImage(with: URL(string: "http://image.tmdb.org/t/p/w185/\(search.imageURL)"))
+                cell.numberLabel.text = String(row + 1)
                 return cell
             }
             .disposed(by: bag)

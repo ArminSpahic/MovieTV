@@ -26,7 +26,7 @@ struct Search {
             let voteCount = object["vote_count"] as? Int,
             let voteRating = object["vote_average"] as? Double,
             let imageURL = object["poster_path"] as? String,
-            let mediaType = object["media_type"] as? String
+            let mediaType = object["media_type"] as? String          
             else {
                 return nil
         }
