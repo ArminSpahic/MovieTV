@@ -1,5 +1,5 @@
 # MovieTV
-Searching for moves and tv shows
+List of top 10 best rated movies and tv shows according to user votes with genre and description regarding the same. Live search also included.
 
 #How to run the app
 
